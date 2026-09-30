@@ -296,6 +296,48 @@
     color: var(--ok);
   }
 
+  .space-monthly {
+    font-size: 0.72em;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  .space-monthly b { color: var(--magenta-dark); }
+
+  /* ── TOASTS ─────────────────────────────── */
+  .toast-container {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 2000;
+    width: min(360px, calc(100vw - 32px));
+    pointer-events: none;
+  }
+  .toast {
+    padding: 13px 18px;
+    border-radius: var(--r-sm);
+    font-size: 0.85em;
+    font-weight: 600;
+    color: white;
+    box-shadow: 0 10px 28px rgba(20,10,25,0.25);
+    animation: toastIn 0.25s ease, toastOut 0.25s ease 2.6s forwards;
+    background: var(--text);
+    text-align: center;
+  }
+  .toast.ok   { background: var(--ok); }
+  .toast.err  { background: var(--err); }
+  .toast.info { background: var(--magenta-dark); }
+  @keyframes toastIn {
+    from { transform: translateY(20px); opacity: 0; }
+    to   { transform: translateY(0); opacity: 1; }
+  }
+  @keyframes toastOut {
+    to { transform: translateY(-10px); opacity: 0; }
+  }
+
   .empty-state {
     text-align: center;
     padding: 40px 20px;
@@ -560,6 +602,8 @@
 
   </main>
 
+  <div class="toast-container" id="toast-container" aria-live="polite"></div>
+
   <!-- CREATE SPACE MODAL -->
   <div class="modal-overlay" id="create-modal">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="create-modal-title">
@@ -645,8 +689,6 @@
       </div>
 
       <button class="btn" id="transfer-btn" onclick="doTransfer()">Transfer In</button>
-      <div class="alert alert-ok" id="transfer-success"></div>
-      <div class="alert alert-err" id="transfer-error"></div>
 
       <div class="btn-row">
         <button class="btn btn-ghost" type="button" onclick="editActiveSpace()">Edit Space</button>
@@ -690,6 +732,25 @@
       return Math.ceil((target - now) / (1000 * 60 * 60 * 24));
     }
 
+    /* ── TOASTS ───────────────────────────── */
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = 'toast ' + type;
+      toast.textContent = message;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 2900);
+    }
+
+    /* ── MONTHLY SAVINGS NEEDED ───────────── */
+    function monthlyNeeded(space) {
+      const remaining = space.goal - space.current;
+      const days = daysUntil(space.targetDate);
+      if (remaining <= 0 || days === null || days <= 0) return null;
+      const months = Math.max(days / 30.44, 1 / 30.44); // avoid divide-by-near-zero
+      return remaining / months;
+    }
+
     function renderSpaces() {
       const grid = document.getElementById('spaces-grid');
       const empty = document.getElementById('empty-state');
@@ -715,6 +776,11 @@
           badge = `<div class="space-badge">${days}d left</div>`;
         }
 
+        const monthly = !met ? monthlyNeeded(space) : null;
+        const monthlyLine = monthly !== null
+          ? `<div class="space-monthly">Save <b>${formatMoney(monthly)}</b>/mo to hit your goal</div>`
+          : '';
+
         const card = document.createElement('div');
         card.className = 'space-card' + (met ? ' goal-met' : '');
         card.onclick = () => openDetailModal(space.id);
@@ -737,6 +803,7 @@
             <span class="space-pct">${pct}%</span>
             ${badge}
           </div>
+          ${monthlyLine}
         `;
         const actions = document.createElement('div');
         actions.className = 'space-actions';
@@ -879,6 +946,7 @@
           document.getElementById('detail-modal').classList.contains('open')) {
         renderDetailModal();
       }
+      showToast(editingSpaceId ? `"${name}" updated.` : `"${name}" created!`, 'ok');
       closeModal('create-modal');
       editingSpaceId = null;
     }
@@ -917,8 +985,6 @@
       document.getElementById('detail-days').textContent = daysText;
 
       document.getElementById('transfer-amount').value = '';
-      document.getElementById('transfer-success').style.display = 'none';
-      document.getElementById('transfer-error').style.display = 'none';
       switchTab('in');
     }
 
@@ -930,56 +996,43 @@
         tab === 'in' ? 'Amount to move from Main Balance' : 'Amount to move back to Main Balance';
       document.getElementById('transfer-btn').textContent =
         tab === 'in' ? 'Transfer In' : 'Transfer Out';
-      document.getElementById('transfer-success').style.display = 'none';
-      document.getElementById('transfer-error').style.display = 'none';
     }
 
     function doTransfer() {
       const space = getActiveSpace();
       if (!space) return;
 
-      const successEl = document.getElementById('transfer-success');
-      const errorEl = document.getElementById('transfer-error');
-      successEl.style.display = 'none';
-      errorEl.style.display = 'none';
-
       const amount = parseFloat(document.getElementById('transfer-amount').value);
 
       if (isNaN(amount) || amount <= 0) {
-        errorEl.textContent = 'Enter a valid amount greater than £0.';
-        errorEl.style.display = 'block';
+        showToast('Enter a valid amount greater than £0.', 'err');
         return;
       }
 
       if (activeTab === 'in') {
         if (amount > mainBalance) {
-          errorEl.textContent = 'Insufficient main balance for this transfer.';
-          errorEl.style.display = 'block';
+          showToast('Insufficient main balance for this transfer.', 'err');
           return;
         }
         mainBalance -= amount;
         space.current += amount;
-        successEl.textContent = `Transferred ${formatMoney(amount)} into "${space.name}".`;
+        showToast(`Transferred ${formatMoney(amount)} into "${space.name}".`, 'ok');
       } else {
         if (amount > space.current) {
-          errorEl.textContent = 'Insufficient balance in this space.';
-          errorEl.style.display = 'block';
+          showToast('Insufficient balance in this space.', 'err');
           return;
         }
         space.current -= amount;
         mainBalance += amount;
-        successEl.textContent = `Transferred ${formatMoney(amount)} back to Main Balance.`;
+        showToast(`Transferred ${formatMoney(amount)} back to Main Balance.`, 'ok');
       }
 
-      successEl.style.display = 'block';
       document.getElementById('transfer-amount').value = '';
 
       saveState();
       renderMainBalance();
       renderSpaces();
       renderDetailModal();
-      successEl.style.display = 'block';
-      successEl.textContent = successEl.textContent;
     }
 
     function deleteSpace(id = activeSpaceId) {
@@ -995,6 +1048,7 @@
       renderSpaces();
       if (activeSpaceId === id) closeModal('detail-modal');
       if (editingSpaceId === id) closeModal('create-modal');
+      showToast(`"${space.name}" deleted — balance returned to Main.`, 'info');
     }
 
     function closeModal(id) {
