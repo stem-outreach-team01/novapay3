@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NovaPay — Savings Spaces</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:           #EDEDF2;
+    --card:         #FFFFFF;
+    --silver:       #C0C4CC;
+    --silver-dark:  #9A9EA8;
+    --hero-from:    #3A3D45;
+    --hero-mid:     #52555E;
+    --hero-to:      #6E1B4D;
+    --magenta:      #D6006E;
+    --magenta-dark: #A0004F;
+    --magenta-light:#FCE4F0;
+    --text:         #1D1E24;
+    --muted:        #8A8D96;
+    --border:       #E2E3E8;
+    --ok:           #00A86B;
+    --err:          #E8425A;
+    --shadow:       0 4px 18px rgba(30,20,30,0.10);
+    --r:            18px;
+    --r-sm:         12px;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 60px;
+  }
+
+  /* ── HEADER ─────────────────────────────── */
+  .app-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: white;
+    border-bottom: 1px solid var(--border);
+    height: 60px;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .app-logo {
+    font-size: 1.2em;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    color: var(--magenta);
+  }
+  .app-logo span { color: var(--text); }
+  .avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--magenta), var(--silver-dark));
+    color: white;
+    font-size: 0.75em;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* ── MAIN ───────────────────────────────── */
+  .main {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 26px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  /* ── MAIN BALANCE HERO ──────────────────── */
+  .balance-hero {
+    background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-mid) 45%, var(--hero-to) 100%);
+    border-radius: var(--r);
+    padding: 26px 28px;
+    color: white;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .balance-hero::before {
+    content: '';
+    position: absolute; top: -70px; right: -50px;
+    width: 220px; height: 220px;
+    border-radius: 50%;
+    background: rgba(214,0,110,0.25);
+    pointer-events: none;
+  }
+  .balance-hero::after {
+    content: '';
+    position: absolute; bottom: -90px; left: 30px;
+    width: 180px; height: 180px;
+    border-radius: 50%;
+    background: rgba(192,196,204,0.15);
+    pointer-events: none;
+  }
+  .balance-eyebrow {
+    font-size: 0.7em;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 10px;
+    position: relative; z-index: 1;
+  }
+  .balance-amount {
+    font-size: 2.6em;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    color: #FFFFFF;
+    margin-bottom: 8px;
+    font-variant-numeric: tabular-nums;
+    position: relative; z-index: 1;
+  }
+  .balance-sub {
+    font-size: 0.82em;
+    color: rgba(255,255,255,0.6);
+    position: relative; z-index: 1;
+  }
+
+  /* ── HEADER ROW FOR SPACES ──────────────── */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .section-title {
+    font-size: 1.05em;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+  .btn-new {
+    background: var(--magenta);
+    color: white;
+    border: none;
+    border-radius: 100px;
+    padding: 9px 18px;
+    font-size: 0.82em;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(214,0,110,0.35);
+    transition: opacity 0.15s, transform 0.1s;
+  }
+  .btn-new:hover { opacity: 0.92; }
+  .btn-new:active { transform: scale(0.97); }
+
+  /* ── SPACES GRID ────────────────────────── */
+  .spaces-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  @media (max-width: 560px) {
+    .spaces-grid { grid-template-columns: 1fr; }
+  }
+
+  .space-card {
+    background: var(--card);
+    border-radius: var(--r);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .space-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(30,20,30,0.14);
+  }
+  .space-card.goal-met {
+    border: 1px solid var(--magenta);
+  }
+
+  .space-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .space-emoji {
+    width: 46px; height: 46px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--magenta-light), var(--silver));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4em;
+    flex-shrink: 0;
+  }
+  .space-name {
+    font-size: 0.98em;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1.25;
+  }
+  .space-detail {
+    font-size: 0.75em;
+    color: var(--muted);
+    margin-top: 2px;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .space-amounts {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .space-current {
+    font-size: 1.15em;
+    font-weight: 800;
+    color: var(--magenta-dark);
+    font-variant-numeric: tabular-nums;
+  }
+  .space-target {
+    font-size: 0.78em;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .progress-track {
+    width: 100%;
+    height: 9px;
+    border-radius: 100px;
+    background: var(--bg);
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 100px;
+    background: linear-gradient(90deg, var(--silver-dark), var(--magenta));
+    transition: width 0.4s ease;
+  }
+
+  .space-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.72em;
+    color: var(--muted);
+  }
+  .space-pct {
+    font-weight: 700;
+    color: var(--magenta-dark);
+  }
+  .space-badge {
+    font-size: 0.68em;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 100px;
+    background: var(--magenta-light);
+    color: var(--magenta-dark);
+  }
+  .space-badge.overdue {
+    background: #FFECEC;
+    color: var(--err);
+  }
+  .space-badge.done {
+    background: #E4F9EF;
+    color: var(--ok);
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--muted);
+    background: var(--card);
+    border-radius: var(--r);
+    box-shadow: var(--shadow);
+    font-size: 0.9em;
+  }
+
+  /* ── MODAL ──────────────────────────────── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(20,15,25,0.55);
+    z-index: 1000;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  @media (min-width: 600px) {
+    .modal-overlay { align-items: center; }
+  }
+
+  .modal {
+    background: var(--card);
+    width: 100%;
+    max-width: 480px;
+    max-height: 92vh;
+    overflow-y: auto;
+    border-radius: 20px 20px 0 0;
+    padding: 26px 24px 30px;
+    animation: slideUp 0.25s ease;
+  }
+  @media (min-width: 600px) {
+    .modal { border-radius: var(--r); }
+  }
+  @keyframes slideUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .modal-title {
+    font-size: 1.1em;
+    font-weight: 800;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .modal-close {
+    background: var(--bg);
+    border: none;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    font-size: 1em;
+    cursor: pointer;
+    color: var(--muted);
+  }
+
+  .field { margin-bottom: 14px; }
+  .field-label {
+    display: block;
+    font-size: 0.72em;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 7px;
+  }
+  .input-wrap { position: relative; }
+  .input-prefix {
+    position: absolute;
+    left: 14px; top: 50%;
+    transform: translateY(-50%);
+    font-weight: 600;
+    color: var(--muted);
+    font-size: 0.9em;
+    pointer-events: none;
+  }
+  input, textarea, select {
+    width: 100%;
+    padding: 12px 14px;
+    border: 2px solid var(--border);
+    border-radius: var(--r-sm);
+    font-size: 0.93em;
+    font-family: inherit;
+    color: var(--text);
+    background: var(--bg);
+    outline: none;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  textarea { resize: vertical; min-height: 60px; }
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--magenta);
+    background: white;
+  }
+  .input-prefixed { padding-left: 30px; }
+
+  .emoji-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+  }
+  .emoji-opt {
+    aspect-ratio: 1;
+    border: 2px solid var(--border);
+    border-radius: var(--r-sm);
+    background: var(--bg);
+    font-size: 1.3em;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+  }
+  .emoji-opt.selected {
+    border-color: var(--magenta);
+    background: var(--magenta-light);
+  }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .btn {
+    display: block;
+    width: 100%;
+    padding: 13px;
+    border: none;
+    border-radius: var(--r-sm);
+    font-size: 0.95em;
+    font-family: inherit;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    background: var(--magenta);
+    color: white;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    margin-top: 6px;
+  }
+  .btn:hover { opacity: 0.9; }
+  .btn-ghost {
+    background: var(--magenta-light);
+    color: var(--magenta-dark);
+  }
+  .btn-silver {
+    background: var(--silver);
+    color: #2A2C33;
+  }
+  .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px; }
+  .btn-row .btn { margin-top: 0; }
+
+  .alert {
+    margin-top: 12px;
+    padding: 12px 16px;
+    border-radius: var(--r-sm);
+    font-size: 0.85em;
+    font-weight: 500;
+    display: none;
+  }
+  .alert-ok  { background: #E4F9EF; color: #00804E; border: 1px solid #B0EDCF; }
+  .alert-err { background: #FFF0F1; color: #BF1030; border: 1px solid #FFB8C1; }
+
+  /* ── DETAIL VIEW ────────────────────────── */
+  .detail-hero {
+    text-align: center;
+    padding: 10px 0 20px;
+  }
+  .detail-emoji {
+    width: 64px; height: 64px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, var(--magenta-light), var(--silver));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2em;
+    margin: 0 auto 12px;
+  }
+  .detail-name { font-size: 1.15em; font-weight: 800; margin-bottom: 4px; }
+  .detail-detail { font-size: 0.82em; color: var(--muted); margin-bottom: 16px; }
+  .detail-current {
+    font-size: 2.2em;
+    font-weight: 800;
+    color: var(--magenta-dark);
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+  }
+  .detail-target {
+    font-size: 0.85em;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+  .detail-meta-row {
+    display: flex;
+    justify-content: center;
+    gap: 18px;
+    font-size: 0.78em;
+    color: var(--muted);
+    margin-top: 10px;
+  }
+  .detail-meta-row b { color: var(--text); }
+
+  .tab-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 10px;
+    border-radius: var(--r-sm);
+    border: 2px solid var(--border);
+    background: var(--bg);
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 0.85em;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .tab-btn.active {
+    border-color: var(--magenta);
+    color: var(--magenta-dark);
+    background: var(--magenta-light);
+  }
+
+  .danger-link {
+    text-align: center;
+    margin-top: 18px;
+    font-size: 0.8em;
+    color: var(--err);
+    cursor: pointer;
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+
+  <header class="app-header">
+    <div class="app-logo">nova<span>pay</span></div>
+    <div class="avatar">AC</div>
+  </header>
+
+  <main class="main">
+
+    <div class="balance-hero">
+      <div class="balance-eyebrow">Main Balance</div>
+      <div class="balance-amount" id="main-balance-display">£0.00</div>
+      <div class="balance-sub">Available to allocate into your Savings Spaces</div>
+    </div>
+
+    <div class="section-header">
+      <div class="section-title">Savings Spaces</div>
+      <button class="btn-new" onclick="openCreateModal()">+ New Space</button>
+    </div>
+
+    <div class="spaces-grid" id="spaces-grid"></div>
+    <div class="empty-state" id="empty-state" style="display:none;">
+      No savings spaces yet — create one to start setting money aside toward a goal.
+    </div>
+
+  </main>
+
+  <!-- CREATE SPACE MODAL -->
+  <div class="modal-overlay" id="create-modal">
+    <div class="modal">
+      <div class="modal-title">
+        New Savings Space
+        <button class="modal-close" onclick="closeModal('create-modal')">✕</button>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Choose an icon</label>
+        <div class="emoji-grid" id="emoji-grid"></div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Space name</label>
+        <input type="text" id="create-name" placeholder="e.g. Japan Trip">
+      </div>
+
+      <div class="field">
+        <label class="field-label">Details (optional)</label>
+        <textarea id="create-detail" placeholder="What's this space for?"></textarea>
+      </div>
+
+      <div class="two-col">
+        <div class="field">
+          <label class="field-label">Goal amount</label>
+          <div class="input-wrap">
+            <span class="input-prefix">£</span>
+            <input type="number" id="create-goal" class="input-prefixed" placeholder="500" min="0">
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label">Target date</label>
+          <input type="date" id="create-date">
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Starting amount (optional)</label>
+        <div class="input-wrap">
+          <span class="input-prefix">£</span>
+          <input type="number" id="create-start" class="input-prefixed" placeholder="0.00" min="0">
+        </div>
+      </div>
+
+      <button class="btn" onclick="createSpace()">Create Space</button>
+      <div class="alert alert-err" id="create-error"></div>
+    </div>
+  </div>
+
+  <!-- DETAIL / TRANSFER MODAL -->
+  <div class="modal-overlay" id="detail-modal">
+    <div class="modal">
+      <div class="modal-title">
+        <span>Space Details</span>
+        <button class="modal-close" onclick="closeModal('detail-modal')">✕</button>
+      </div>
+
+      <div class="detail-hero">
+        <div class="detail-emoji" id="detail-emoji"></div>
+        <div class="detail-name" id="detail-name"></div>
+        <div class="detail-detail" id="detail-detail"></div>
+        <div class="detail-current" id="detail-current"></div>
+        <div class="detail-target" id="detail-target"></div>
+        <div class="progress-track"><div class="progress-fill" id="detail-progress-fill"></div></div>
+        <div class="detail-meta-row">
+          <div><b id="detail-pct"></b> complete</div>
+          <div><b id="detail-days"></b></div>
+        </div>
+      </div>
+
+      <div class="tab-row">
+        <button class="tab-btn active" id="tab-in" onclick="switchTab('in')">Transfer In</button>
+        <button class="tab-btn" id="tab-out" onclick="switchTab('out')">Transfer Out</button>
+      </div>
+
+      <div class="field">
+        <label class="field-label" id="transfer-label">Amount to move from Main Balance</label>
+        <div class="input-wrap">
+          <span class="input-prefix">£</span>
+          <input type="number" id="transfer-amount" class="input-prefixed" placeholder="0.00" min="0">
+        </div>
+      </div>
+
+      <button class="btn" id="transfer-btn" onclick="doTransfer()">Transfer In</button>
+      <div class="alert alert-ok" id="transfer-success"></div>
+      <div class="alert alert-err" id="transfer-error"></div>
+
+      <div class="danger-link" onclick="deleteSpace()">Delete this space</div>
+    </div>
+  </div>
+
+  <script>
+    const EMOJIS = ['🎯','✈️','🏠','🚗','🎓','💻','📱','🎮','👟','🎁','💍','🏖️','🐶','🎸','📚','🍔','🏋️','🧳','💰','🌱','⚽','🎂'];
+    const STORAGE_KEY = 'novapay_savings_spaces';
+    const BALANCE_KEY = 'novapay_main_balance';
+
+    let mainBalance = parseFloat(localStorage.getItem(BALANCE_KEY));
+    if (isNaN(mainBalance)) mainBalance = 1250.00;
+
+    let spaces = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    let selectedEmoji = EMOJIS[0];
+    let activeSpaceId = null;
+    let activeTab = 'in';
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(spaces));
+      localStorage.setItem(BALANCE_KEY, String(mainBalance));
+    }
+
+    function formatMoney(n) {
+      return '£' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+
+    function renderMainBalance() {
+      document.getElementById('main-balance-display').textContent = formatMoney(mainBalance);
+    }
+
+    function daysUntil(dateStr) {
+      if (!dateStr) return null;
+      const target = new Date(dateStr + 'T00:00:00');
+      const now = new Date();
+      now.setHours(0,0,0,0);
+      return Math.ceil((target - now) / (1000 * 60 * 60 * 24));
+    }
+
+    function renderSpaces() {
+      const grid = document.getElementById('spaces-grid');
+      const empty = document.getElementById('empty-state');
+      grid.innerHTML = '';
+
+      if (spaces.length === 0) {
+        empty.style.display = 'block';
+        return;
+      }
+      empty.style.display = 'none';
+
+      spaces.forEach(space => {
+        const pct = space.goal > 0 ? Math.min(100, Math.round((space.current / space.goal) * 100)) : 0;
+        const met = space.current >= space.goal && space.goal > 0;
+        const days = daysUntil(space.targetDate);
+
+        let badge = '';
+        if (met) {
+          badge = '<div class="space-badge done">Goal reached 🎉</div>';
+        } else if (days !== null && days < 0) {
+          badge = '<div class="space-badge overdue">Overdue</div>';
+        } else if (days !== null) {
+          badge = `<div class="space-badge">${days}d left</div>`;
+        }
+
+        const card = document.createElement('div');
+        card.className = 'space-card' + (met ? ' goal-met' : '');
+        card.onclick = () => openDetailModal(space.id);
+        card.innerHTML = `
+          <div class="space-top">
+            <div class="space-emoji">${space.emoji}</div>
+            <div>
+              <div class="space-name">${escapeHtml(space.name)}</div>
+              <div class="space-detail">${escapeHtml(space.detail || '')}</div>
+            </div>
+          </div>
+          <div class="space-amounts">
+            <div class="space-current">${formatMoney(space.current)}</div>
+            <div class="space-target">of ${formatMoney(space.goal)}</div>
+          </div>
+          <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+          <div class="space-footer">
+            <span class="space-pct">${pct}%</span>
+            ${badge}
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    /* ── CREATE MODAL ─────────────────────── */
+    function buildEmojiGrid() {
+      const grid = document.getElementById('emoji-grid');
+      grid.innerHTML = '';
+      EMOJIS.forEach(e => {
+        const btn = document.createElement('div');
+        btn.className = 'emoji-opt' + (e === selectedEmoji ? ' selected' : '');
+        btn.textContent = e;
+        btn.onclick = () => {
+          selectedEmoji = e;
+          buildEmojiGrid();
+        };
+        grid.appendChild(btn);
+      });
+    }
+
+    function openCreateModal() {
+      selectedEmoji = EMOJIS[0];
+      document.getElementById('create-name').value = '';
+      document.getElementById('create-detail').value = '';
+      document.getElementById('create-goal').value = '';
+      document.getElementById('create-date').value = '';
+      document.getElementById('create-start').value = '';
+      document.getElementById('create-error').style.display = 'none';
+      buildEmojiGrid();
+      document.getElementById('create-modal').classList.add('open');
+    }
+
+    function createSpace() {
+      const name = document.getElementById('create-name').value.trim();
+      const detail = document.getElementById('create-detail').value.trim();
+      const goal = parseFloat(document.getElementById('create-goal').value);
+      const targetDate = document.getElementById('create-date').value;
+      let start = parseFloat(document.getElementById('create-start').value);
+      if (isNaN(start)) start = 0;
+
+      const errorEl = document.getElementById('create-error');
+      errorEl.style.display = 'none';
+
+      if (!name) {
+        errorEl.textContent = 'Please give your space a name.';
+        errorEl.style.display = 'block';
+        return;
+      }
+      if (isNaN(goal) || goal <= 0) {
+        errorEl.textContent = 'Please enter a goal amount greater than £0.';
+        errorEl.style.display = 'block';
+        return;
+      }
+      if (start > mainBalance) {
+        errorEl.textContent = 'Starting amount cannot exceed your main balance.';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      mainBalance -= start;
+
+      spaces.push({
+        id: 'space_' + Date.now(),
+        emoji: selectedEmoji,
+        name,
+        detail,
+        goal,
+        current: start,
+        targetDate,
+        createdAt: new Date().toISOString()
+      });
+
+      saveState();
+      renderMainBalance();
+      renderSpaces();
+      closeModal('create-modal');
+    }
+
+    /* ── DETAIL / TRANSFER MODAL ──────────── */
+    function openDetailModal(id) {
+      activeSpaceId = id;
+      activeTab = 'in';
+      renderDetailModal();
+      document.getElementById('detail-modal').classList.add('open');
+    }
+
+    function getActiveSpace() {
+      return spaces.find(s => s.id === activeSpaceId);
+    }
+
+    function renderDetailModal() {
+      const space = getActiveSpace();
+      if (!space) return;
+
+      const pct = space.goal > 0 ? Math.min(100, Math.round((space.current / space.goal) * 100)) : 0;
+      const days = daysUntil(space.targetDate);
+
+      document.getElementById('detail-emoji').textContent = space.emoji;
+      document.getElementById('detail-name').textContent = space.name;
+      document.getElementById('detail-detail').textContent = space.detail || 'No details added.';
+      document.getElementById('detail-current').textContent = formatMoney(space.current);
+      document.getElementById('detail-target').textContent = 'Goal: ' + formatMoney(space.goal);
+      document.getElementById('detail-progress-fill').style.width = pct + '%';
+      document.getElementById('detail-pct').textContent = pct + '%';
+
+      let daysText = 'No date set';
+      if (days !== null) {
+        daysText = days < 0 ? Math.abs(days) + ' days overdue' : days + ' days left';
+      }
+      document.getElementById('detail-days').textContent = daysText;
+
+      document.getElementById('transfer-amount').value = '';
+      document.getElementById('transfer-success').style.display = 'none';
+      document.getElementById('transfer-error').style.display = 'none';
+      switchTab('in');
+    }
+
+    function switchTab(tab) {
+      activeTab = tab;
+      document.getElementById('tab-in').classList.toggle('active', tab === 'in');
+      document.getElementById('tab-out').classList.toggle('active', tab === 'out');
+      document.getElementById('transfer-label').textContent =
+        tab === 'in' ? 'Amount to move from Main Balance' : 'Amount to move back to Main Balance';
+      document.getElementById('transfer-btn').textContent =
+        tab === 'in' ? 'Transfer In' : 'Transfer Out';
+      document.getElementById('transfer-success').style.display = 'none';
+      document.getElementById('transfer-error').style.display = 'none';
+    }
+
+    function doTransfer() {
+      const space = getActiveSpace();
+      if (!space) return;
+
+      const successEl = document.getElementById('transfer-success');
+      const errorEl = document.getElementById('transfer-error');
+      successEl.style.display = 'none';
+      errorEl.style.display = 'none';
+
+      const amount = parseFloat(document.getElementById('transfer-amount').value);
+
+      if (isNaN(amount) || amount <= 0) {
+        errorEl.textContent = 'Enter a valid amount greater than £0.';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      if (activeTab === 'in') {
+        if (amount > mainBalance) {
+          errorEl.textContent = 'Insufficient main balance for this transfer.';
+          errorEl.style.display = 'block';
+          return;
+        }
+        mainBalance -= amount;
+        space.current += amount;
+        successEl.textContent = `Transferred ${formatMoney(amount)} into "${space.name}".`;
+      } else {
+        if (amount > space.current) {
+          errorEl.textContent = 'Insufficient balance in this space.';
+          errorEl.style.display = 'block';
+          return;
+        }
+        space.current -= amount;
+        mainBalance += amount;
+        successEl.textContent = `Transferred ${formatMoney(amount)} back to Main Balance.`;
+      }
+
+      successEl.style.display = 'block';
+      document.getElementById('transfer-amount').value = '';
+
+      saveState();
+      renderMainBalance();
+      renderSpaces();
+      renderDetailModal();
+      successEl.style.display = 'block';
+      successEl.textContent = successEl.textContent;
+    }
+
+    function deleteSpace() {
+      const space = getActiveSpace();
+      if (!space) return;
+      if (!confirm(`Delete "${space.name}"? Any remaining balance (${formatMoney(space.current)}) will be returned to your Main Balance.`)) {
+        return;
+      }
+      mainBalance += space.current;
+      spaces = spaces.filter(s => s.id !== space.id);
+      saveState();
+      renderMainBalance();
+      renderSpaces();
+      closeModal('detail-modal');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('open');
+    }
+
+    // Close modal when clicking outside content
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) overlay.classList.remove('open');
+      });
+    });
+
+    // Init
+    renderMainBalance();
+    renderSpaces();
+  </script>
+
+</body>
+</html>
